@@ -9,7 +9,14 @@ import matplotlib.pyplot as plt
 import sounddevice as sd
 import scipy.io.wavfile as wav
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
+from transformers import pipeline  # For Sentiment Analysis and Emotion Detection
 import io
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import pipeline
+
+# Load model and tokenizer
+tokenizer = AutoTokenizer.from_pretrained("j-hartmann/emotion-english-distilroberta-base")
+model = AutoModelForSequenceClassification.from_pretrained("j-hartmann/emotion-english-distilroberta-base")
 
 # Function to convert text to speech
 def text_to_speech(text):
@@ -60,6 +67,26 @@ def record_audio(duration=5, samplerate=16000):
     sd.wait()
     return audio_data.flatten()
 
+# Emotion detection pipeline (using a pre-trained model)
+def emotion_detection(audio_input):
+    # Use a pre-trained audio emotion recognition model
+    emotion_pipeline = pipeline("audio-classification", model="j-hartmann/emotion-recognition-english")
+    
+    # Run the model on the audio input (note: audio_input needs to be a valid audio waveform)
+    result = emotion_pipeline(audio_input)
+    
+    # Extract the predicted emotion and the confidence score
+    predicted_emotion = result[0]['label']
+    emotion_score = result[0]['score']
+    
+    return predicted_emotion, emotion_score
+# Sentiment analysis pipeline (using a pre-trained model)
+def sentiment_analysis(text):
+    # Use a pre-trained sentiment analysis model
+    sentiment_pipeline = pipeline("sentiment-analysis")
+    result = sentiment_pipeline(text)
+    return result[0]['label'], result[0]['score']
+
 def main():
     st.title("Text to Speech & Speech to Text Converter")
 
@@ -103,6 +130,16 @@ def main():
                     st.subheader("Transcription from Speech:")
                     st.write(transcription)
 
+                    # Perform Sentiment Analysis
+                    sentiment, sentiment_score = sentiment_analysis(transcription)
+                    st.subheader("Sentiment Analysis:")
+                    st.write(f"Sentiment: {sentiment} with confidence score: {sentiment_score:.2f}")
+
+                    # Perform Emotion Detection
+                    emotion, emotion_score = emotion_detection(librosa.load("output.mp3", sr=16000)[0])
+                    st.subheader("Emotion Detection:")
+                    st.write(f"Detected Emotion: {emotion} with confidence score: {emotion_score:.2f}")
+
     # Speech to Text (Mic) Tab
     with tab2:
         st.info("Click the button below to start recording from your microphone.")
@@ -123,8 +160,11 @@ def main():
             st.subheader("Transcription from Mic Input:")
             st.write(transcription)
 
-            # Live Text Display
-            st.text_area("Detected Text", value=transcription, height=100)
+            # Perform Sentiment Analysis
+            sentiment, sentiment_score = sentiment_analysis(transcription)
+            st.subheader("Sentiment Analysis:")
+            st.write(f"Sentiment: {sentiment} with confidence score: {sentiment_score:.2f}")
+
 
 if __name__ == "__main__":
     main()
