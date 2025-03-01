@@ -16,6 +16,9 @@ from transformers import pipeline
 import tensorflow as tf
 from sklearn.preprocessing import StandardScaler
 
+st.set_page_config(page_title="Speech Processing App", page_icon="./icon.jpg")
+
+
 # Load model and tokenizer for sentiment and emotion detection
 tokenizer = AutoTokenizer.from_pretrained("j-hartmann/emotion-english-distilroberta-base")
 model = AutoModelForSequenceClassification.from_pretrained("j-hartmann/emotion-english-distilroberta-base")
