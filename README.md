@@ -56,6 +56,73 @@ We have included Jupyter notebooks to showcase:
 3. **Dataset Preparation and Labeling**
    - Explains the process of loading, preparing, and labeling the dataset.
    - Identifies high-quality audio samples for model training.
+-------------
+# Speech Processing App
+
+## Overview
+This Streamlit app provides a comprehensive speech processing pipeline with features including:
+- **Text-to-Speech Conversion (TTS)**
+- **Speech-to-Text Conversion (STT)**
+- **Audio Classification for Slurred Speech Detection**
+- **Sentiment Analysis and Emotion Detection**
+- **Audio Frequency Spectrum Visualization**
+
+## Features
+### 1. Text-to-Speech (TTS)
+- Users can input text, which is then converted to speech using `gTTS`.
+- The generated speech can be played directly in the app.
+- **Additional Features:**
+  - Visual representation of the frequency spectrum.
+  - Speech-to-text conversion of the generated audio.
+  - Sentiment analysis and emotion detection on the transcribed text.
+
+### 2. Speech-to-Text (STT)
+- Users can record their speech using the microphone.
+- The recorded speech is transcribed using `Wav2Vec2`.
+- **Additional Features:**
+  - Sentiment analysis and emotion detection on the transcribed text.
+  - Visualization of the audio's frequency spectrum.
+
+### 3. Audio Classification (Slurred Speech Detection)
+- Users can upload a `.wav` file for classification.
+- A trained CNN model predicts whether the speech is slurred or clear.
+- **Model Accuracy:** The model achieves **95% accuracy** based on our dataset.
+
+### 4. Sentiment Analysis & Emotion Detection
+- The transcribed text from STT is analyzed for sentiment and emotions.
+- Pre-trained transformers (`distilroberta-base`) are used for accurate predictions.
+
+### 5. Frequency Spectrum Visualization
+- The app provides a visualization of the frequency spectrum of audio signals.
+- *Placeholder for Example Image:*
+  
+  ![Example Frequency Spectrum](path/to/your/image.png)  
+  *(Replace the path with the actual image file)*
+
+## Datasets & Model Training
+We followed a structured approach to ensure high model accuracy:
+1. **Dataset Preparation:**
+   - We curated and labeled a high-quality dataset of speech samples.
+   - Data cleaning and preprocessing were performed to remove noise.
+2. **Data Augmentation:**
+   - We employed two techniques: `MixupGenerator` and `RandomEraser` to enhance model generalization.
+3. **Model Training:**
+   - We trained a CNN-based model to classify speech as either **Slurred Speech** or **Clear Speech**.
+   - Achieved a classification accuracy of **95%** on the test dataset.
+
+
+## Dependencies
+The project requires the following libraries:
+- `streamlit`
+- `gtts`
+- `torch`
+- `librosa`
+- `numpy`
+- `matplotlib`
+- `sounddevice`
+- `transformers`
+- `tensorflow`
+- `scikit-learn`
 
 ## How to Run the App
 
