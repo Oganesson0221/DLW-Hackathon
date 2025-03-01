@@ -90,11 +90,11 @@ streamlit run app.py
 
 ---
 ### Contributors
-- Murugappan Venkatesh
-- Rashi Ojha
-- Rishika
-- Shireen Verma
-- Stanley Benjamin Yukon
+- [Murugappan Venkatesh](https://github.com/Murugapz)
+- [Rashi Ojha](https://github.com/Rashi0192)
+- [Rishika Mehta](https://github.com/Oganesson0221)
+- [Shireen Verma](https://github.com/s812v)
+- [Stanley Benjamin Yukon](https://github.com/WinAmazingPrizes)
 
 For any issues or feature requests, please open an issue in the repository.
 
