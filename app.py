@@ -13,8 +13,10 @@ from transformers import pipeline  # For Sentiment Analysis and Emotion Detectio
 import io
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from transformers import pipeline
+import tensorflow as tf
+from sklearn.preprocessing import StandardScaler
 
-# Load model and tokenizer
+# Load model and tokenizer for sentiment and emotion detection
 tokenizer = AutoTokenizer.from_pretrained("j-hartmann/emotion-english-distilroberta-base")
 model = AutoModelForSequenceClassification.from_pretrained("j-hartmann/emotion-english-distilroberta-base")
 
@@ -69,17 +71,22 @@ def record_audio(duration=5, samplerate=16000):
 
 # Emotion detection pipeline (using a pre-trained model)
 def emotion_detection(audio_input):
-    # Use a pre-trained audio emotion recognition model
-    emotion_pipeline = pipeline("audio-classification", model="j-hartmann/emotion-recognition-english")
-    
-    # Run the model on the audio input (note: audio_input needs to be a valid audio waveform)
-    result = emotion_pipeline(audio_input)
-    
-    # Extract the predicted emotion and the confidence score
-    predicted_emotion = result[0]['label']
-    emotion_score = result[0]['score']
-    
-    return predicted_emotion, emotion_score
+    try:
+        # Use a pre-trained audio emotion recognition model
+        emotion_pipeline = pipeline("audio-classification", model="j-hartmann/emotion-recognition-english")
+        
+        # Run the model on the audio input (note: audio_input needs to be a valid audio waveform)
+        result = emotion_pipeline(audio_input)
+        
+        # Extract the predicted emotion and the confidence score
+        predicted_emotion = result[0]['label']
+        emotion_score = result[0]['score']
+        
+        return predicted_emotion, emotion_score
+    except Exception as e:
+        st.error(f"Error during emotion detection: {str(e)}")
+        return None, None
+
 # Sentiment analysis pipeline (using a pre-trained model)
 def sentiment_analysis(text):
     # Use a pre-trained sentiment analysis model
@@ -87,11 +94,30 @@ def sentiment_analysis(text):
     result = sentiment_pipeline(text)
     return result[0]['label'], result[0]['score']
 
+# Load the trained model for classification
+try:
+    model_cnn = tf.keras.models.load_model("model.keras")
+except Exception as e:
+    model_cnn = None
+    st.warning(f"Model file not found or cannot be loaded! Error: {e}")
+
+# Compile the model with a new optimizer
+if model_cnn is not None:
+    model_cnn.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+                      loss='binary_crossentropy', metrics=['accuracy'])
+
+# Function to preprocess audio for CNN
+def preprocess_audio_from_ndarray(audio_data):
+    mfccs = librosa.feature.mfcc(y=audio_data, sr=16000, n_mfcc=128)
+    mfccs = np.mean(mfccs, axis=1)
+    return mfccs
+
+# Streamlit App UI
 def main():
     st.title("Text to Speech & Speech to Text Converter")
 
     # Tabs for navigation
-    tab1, tab2 = st.tabs(["Text to Speech", "Speech to Text"])
+    tab1, tab2, tab3 = st.tabs(["Text to Speech", "Speech to Text", "Audio Classification"])
 
     # Text to Speech Tab
     with tab1:
@@ -165,6 +191,39 @@ def main():
             st.subheader("Sentiment Analysis:")
             st.write(f"Sentiment: {sentiment} with confidence score: {sentiment_score:.2f}")
 
+    # Audio Classification Tab
+    with tab3:
+        st.title("Audio Classification for Slurred Speech Detection")
+        st.write("Upload a .wav file or use the microphone to classify if the speech is slurred or not.")
+
+        # Option for file upload
+        uploaded_file = st.file_uploader("Choose a WAV file", type=["wav"])
+
+        # If a file is uploaded, process the file to extract features
+        features = None
+        if uploaded_file is not None:
+            audio_data, _ = librosa.load(uploaded_file, sr=16000)
+            features = preprocess_audio_from_ndarray(audio_data)
+
+        # Ensure features are defined before using them for prediction
+        if features is not None:
+            features = features.reshape(1, 16, 8, 1)  # Reshape to match CNN input shape
+
+            # Check if the features are scaled the same as during training
+            scaler = StandardScaler()
+            features_scaled = scaler.fit_transform(features.flatten().reshape(-1, 1)).reshape(1, 16, 8, 1)
+
+            # Predict using the model
+            prediction = model_cnn.predict(features_scaled)[0][0]
+
+            st.write("Prediction Score:", prediction)
+
+            if prediction > 0.5:
+                st.success("The model predicts: Slurred Speech")
+            else:
+                st.success("The model predicts: Clear Speech")
+        else:
+            st.warning("Please upload a file or record audio to proceed.")
 
 if __name__ == "__main__":
     main()

@@ -2,48 +2,65 @@ import streamlit as st
 import tensorflow as tf
 import numpy as np
 import librosa
-import pickle
 from sklearn.preprocessing import StandardScaler
+import soundfile as sf
+import pyaudio
+import wave
+import tempfile
+import random
 
 # Load the trained model
-model = tf.keras.models.load_model("model.keras")
-
-# Load or define the scaler (assuming it's saved as 'scaler.pkl')
 try:
-    with open("scaler.pkl", "rb") as f:
-        scaler = pickle.load(f)
-except FileNotFoundError:
-    scaler = None
-    st.warning("Scaler not found! Ensure you have the same scaler used during training.")
+    model = tf.keras.models.load_model("model.keras")
+except Exception as e:
+    model = None
+    st.warning(f"Model file not found or cannot be loaded! Error: {e}")
+
+# Compile the model with a new optimizer, since we are reloading the model
+if model is not None:
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+                  loss='binary_crossentropy', metrics=['accuracy'])
 
 st.title("CNN Audio Classification App")
-st.write("Upload a .wav file to classify if the speech is slurred or not.")
+st.write("Upload a .wav file or use the microphone to classify if the speech is slurred or not.")
 
+# Option for file upload
 uploaded_file = st.file_uploader("Choose a WAV file", type=["wav"])
 
-def preprocess_audio(file):
-    y, sr = librosa.load(file, sr=None)  # Load audio file
-    mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=128)  # Extract MFCC features
-    mfccs = np.mean(mfccs, axis=1)  # Take mean across time axis
+# Microphone input handling
+
+# Function to preprocess audio
+def preprocess_audio_from_ndarray(audio_data):
+    mfccs = librosa.feature.mfcc(y=audio_data, sr=16000, n_mfcc=128)
+    mfccs = np.mean(mfccs, axis=1)
     return mfccs
 
+
+# Initialize features variable
+features = None  # Reshape to match CNN input shape
+
+# If a file is uploaded, process the file to extract features
 if uploaded_file is not None:
-    features = preprocess_audio(uploaded_file)
-    features = features.reshape(1, -1)  # Reshape to match input size
-    
-    # Scale the features
-    if scaler and hasattr(scaler, "mean_"):
-        features_scaled = scaler.transform(features)
-    else:
-        st.error("Scaler is not fitted or not found. Ensure you use the correct scaler used during training.")
-        features_scaled = features  # Fallback to unscaled
-    
-    features_scaled = features_scaled.reshape(1, 16, 8, 1)  # Reshape to CNN input shape
+    audio_data, _ = librosa.load(uploaded_file, sr=16000)
+    features = preprocess_audio_from_ndarray(audio_data)
+
+
+# Ensure features are defined before using them for prediction
+if features is not None:
+    features = features.reshape(1, 16, 8, 1)  # Reshape to match CNN input shape
+
+    # Check if the features are scaled the same as during training
+    scaler = StandardScaler()
+    features_scaled = scaler.fit_transform(features.flatten().reshape(-1, 1)).reshape(1, 16, 8, 1)
+
+    # Predict using the model
     prediction = model.predict(features_scaled)[0][0]
-    
+
     st.write("Prediction Score:", prediction)
-    
+
     if prediction > 0.5:
         st.success("The model predicts: Slurred Speech")
     else:
         st.success("The model predicts: Clear Speech")
+else:
+    st.warning("Please upload a file or record audio to proceed.")
