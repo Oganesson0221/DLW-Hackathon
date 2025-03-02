@@ -1,11 +1,26 @@
-streamlit==1.21.0
+# Streamlit and related dependencies
+streamlit==1.42.2
+
+# Text-to-speech (gtts)
 gtts==2.3.1
+
+# Machine learning and deep learning
 torch==2.0.0
+tensorflow==2.13.0
+transformers==4.31.0
+scikit-learn==1.2.2
+
+# Audio processing
 librosa==0.10.0
-numpy==1.23.5
-matplotlib==3.7.1
 sounddevice==0.4.6
 scipy==1.10.1
-transformers==4.31.0
-tensorflow==2.13.0
-scikit-learn==1.2.2
+
+# Data science and visualization
+numpy==1.23.5
+matplotlib==3.7.1
+
+# Utility libraries
+pygments==2.19.1
+rich==13.9.4
+markdown-it-py==3.0.0
+mdurl==0.1.2
